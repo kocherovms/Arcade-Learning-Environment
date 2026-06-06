@@ -12,7 +12,8 @@ namespace ale::vector {
 /// Autoreset behavior when episode ends
 enum class AutoresetMode {
     NextStep,  // Reset on next step() call (observation is first frame of new episode)
-    SameStep   // Reset immediately, return final_obs separately
+    SameStep,   // Reset immediately, return final_obs separately
+    Disabled
 };
 
 /// Observation format
@@ -21,12 +22,18 @@ enum class ObsFormat {
     RGB
 };
 
+enum class ResetMode {
+    None,
+    Real,
+    Fake,
+};
+
 /// Action to execute in an environment
 struct Action {
     int env_id;
     int action_id;
     float paddle_strength;
-    bool force_reset;
+    ResetMode reset_mode;
 };
 
 /// Pointers for worker to write environment output directly into batch buffers

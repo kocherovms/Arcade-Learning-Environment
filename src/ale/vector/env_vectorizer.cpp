@@ -98,7 +98,7 @@ EnvVectorizer::~EnvVectorizer() {
     std::vector<Action> wake_actions(workers_.size());
     for (auto& a : wake_actions) {
         a.env_id = 0;
-        a.force_reset = false;
+        a.reset_mode = ResetMode::None;
     }
     action_queue_->enqueue_bulk(wake_actions);
 
@@ -115,23 +115,40 @@ BatchResult EnvVectorizer::reset(const std::vector<int>& env_ids, const std::vec
         throw std::invalid_argument("env_ids and seeds must have same size");
     }
 
-    first_batch_ = false;
-
     // Set seeds and prepare actions
     std::vector<Action> actions;
-    actions.reserve(env_ids.size());
-    for (std::size_t i = 0; i < env_ids.size(); ++i) {
-        int env_id = env_ids[i];
-        envs_[env_id]->set_seed(seeds[i]);
 
-        Action action;
-        action.env_id = env_id;
-        action.action_id = 0;
-        action.paddle_strength = 1.0f;
-        action.force_reset = true;
-        actions.push_back(action);
+    if(first_batch_) {
+        first_batch_ = false;
+        actions.reserve(env_ids.size());
+    
+        for (std::size_t i = 0; i < env_ids.size(); ++i) {
+            int env_id = env_ids[i];
+            envs_[env_id]->set_seed(seeds[i]);
+
+            Action action;
+            action.env_id = env_id;
+            action.action_id = 0;
+            action.paddle_strength = 1.0f;
+            action.reset_mode = ResetMode::Real;
+            actions.push_back(action);
+        }
+    } else {
+        actions.reserve(batch_size_);
+        std::set<int> set_env_ids(env_ids.begin(), env_ids.end());
+            
+        for (int i = 0; i < batch_size_; ++i) {
+            int actual_env_id = last_recv_env_ids_[i];
+
+            Action action;
+            action.env_id = actual_env_id;
+            action.action_id = 0;
+            action.paddle_strength = 1.0;
+            action.reset_mode = set_env_ids.find(actual_env_id) != set_env_ids.end() ? ResetMode::Real : ResetMode::Fake;
+            actions.push_back(action);
+        }
     }
-
+    
     // Enqueue reset actions
     action_queue_->enqueue_bulk(actions);
 
@@ -159,7 +176,7 @@ void EnvVectorizer::send(const std::vector<Action>& actions) {
         Action mapped = actions[i];
         int actual_env_id = last_recv_env_ids_[i];
         mapped.env_id = actual_env_id;
-        mapped.force_reset = false;
+        mapped.reset_mode = ResetMode::None;
 
         // Set action on environment
         envs_[actual_env_id]->set_action(mapped.action_id, mapped.paddle_strength);
@@ -210,10 +227,29 @@ void EnvVectorizer::execute_env(const Action& action) {
     int env_id = action.env_id;
     auto& env = *envs_[env_id];
 
-    if (autoreset_mode_ == AutoresetMode::NextStep) {
-        // NextStep mode: reset happens before step if episode was over
-        if (action.force_reset || env.is_episode_over()) {
+    if (autoreset_mode_ == AutoresetMode::Disabled) {
+        if (action.reset_mode == ResetMode::Real) {
             env.reset();
+        } else if (action.reset_mode == ResetMode::Fake) {
+            // ...
+        } else {
+            if(env.is_episode_over())
+                throw std::runtime_error("Cannot step env when episode is over");
+
+            env.step();
+        }
+
+        // Stage result
+        staging_->stage_result(env_id, [&](OutputSlot& slot) {
+            env.write_to(slot);
+        });
+    }
+    else if (autoreset_mode_ == AutoresetMode::NextStep) {
+        // NextStep mode: reset happens before step if episode was over
+        if (action.reset_mode == ResetMode::Real || env.is_episode_over()) {
+            env.reset();
+        } else if (action.reset_mode == ResetMode::Fake) {
+            // ...
         } else {
             env.step();
         }
@@ -224,13 +260,15 @@ void EnvVectorizer::execute_env(const Action& action) {
         });
 
     } else {  // SameStep mode
-        if (action.force_reset) {
+        if (action.reset_mode == ResetMode::Real) {
             env.reset();
 
             staging_->stage_result(env_id, [&](OutputSlot& slot) {
                 env.write_to(slot);
             });
 
+        } else if (action.reset_mode == ResetMode::Fake) {
+            // ...
         } else {
             env.step();
 

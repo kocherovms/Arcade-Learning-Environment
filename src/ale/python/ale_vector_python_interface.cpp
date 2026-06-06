@@ -15,6 +15,7 @@ using ale::vector::EnvVectorizer;
 using ale::vector::BatchResult;
 using ale::vector::AutoresetMode;
 using ale::vector::Action;
+using ale::vector::ResetMode;
 
 namespace {
 
@@ -148,7 +149,9 @@ void init_vector_module(nb::module_& m) {
                 const std::string& autoreset_mode_str
             ) {
                 AutoresetMode autoreset_mode;
-                if (autoreset_mode_str == "NextStep") {
+                if (autoreset_mode_str == "Disabled") {
+                    autoreset_mode = AutoresetMode::Disabled;
+                } else if (autoreset_mode_str == "NextStep") {
                     autoreset_mode = AutoresetMode::NextStep;
                 } else if (autoreset_mode_str == "SameStep") {
                     autoreset_mode = AutoresetMode::SameStep;
@@ -209,7 +212,7 @@ void init_vector_module(nb::module_& m) {
                 a.env_id = static_cast<int>(i);  // Will be remapped in send()
                 a.action_id = action_ids[i];
                 a.paddle_strength = paddle_strengths[i];
-                a.force_reset = false;
+                a.reset_mode = ResetMode::None;
                 actions.push_back(a);
             }
 
@@ -253,6 +256,7 @@ void init_vector_module(nb::module_& m) {
 
     // Expose AutoresetMode enum
     nb::enum_<AutoresetMode>(m, "AutoresetMode")
+        .value("Disabled", AutoresetMode::Disabled)
         .value("NextStep", AutoresetMode::NextStep)
         .value("SameStep", AutoresetMode::SameStep);
 }
