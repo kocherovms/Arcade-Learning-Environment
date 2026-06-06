@@ -44,6 +44,7 @@ if (BUILD_VECTOR_LIB AND BUILD_VECTOR_XLA_LIB)
 elseif (BUILD_VECTOR_LIB)
     target_sources(_ale_py PRIVATE ale_vector_python_interface.cpp)
     target_compile_definitions(_ale_py PRIVATE BUILD_VECTOR_LIB)
+    target_include_directories(_ale_py PRIVATE ${OpenCV_INCLUDE_DIRS})
 endif()
 
 target_link_libraries(_ale_py PUBLIC ale ale-lib)

@@ -65,10 +65,11 @@ if (BUILD_CPP_LIB OR BUILD_PYTHON_LIB)
 
   if (BUILD_VECTOR_LIB)
     find_package(OpenCV CONFIG REQUIRED)
-    include_directories(${OpenCV_INCLUDE_DIRS})
-
-    target_include_directories(ale PUBLIC external)
-
+    # include_directories(${OpenCV_INCLUDE_DIRS})
+    # target_include_directories(ale PUBLIC external)
+    target_include_directories(ale PRIVATE ${OpenCV_INCLUDE_DIRS})
+    target_include_directories(ale PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/external>)
+    
     add_subdirectory(vector)
 
     target_link_libraries(ale PRIVATE ${OpenCV_LIBS})
