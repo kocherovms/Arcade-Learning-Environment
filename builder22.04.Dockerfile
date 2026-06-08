@@ -25,7 +25,7 @@ RUN python3.12 get-pip.py
 RUN rm get-pip.py
 
 # Install the build package specifically under Python 3.12
-RUN python3.12 -m pip install --upgrade pip && python3.12 -m pip install build nanobind
+RUN python3.12 -m pip install --upgrade pip && python3.12 -m pip install build nanobind scikit_build_core jax
 
 # Install vcpkg toolchain inside the container image
 RUN git clone https://github.com/microsoft/vcpkg.git /opt/vcpkg
