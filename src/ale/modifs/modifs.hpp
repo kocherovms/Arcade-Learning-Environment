@@ -2,6 +2,8 @@
 #define MODIFS_HPP_
 
 #include <memory>
+#include <functional>
+
 #include "ale/ale_interface.hpp"
 
 namespace ale {
@@ -42,7 +44,7 @@ public:
             const auto registry_it = registry->find(unprefixed_name);
             
             if (registry_it == registry->end())
-                throw std::runtime_error(std::string("Game modification \"") + name + "\" not found");
+                throw std::runtime_error(std::string("Game modification \"") + name + "\" not found (unprefixed_name=\"" + unprefixed_name + "\")");
             
             prefix_it->second.first->push_back(registry_it->second);
         }
