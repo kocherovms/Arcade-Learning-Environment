@@ -32,12 +32,13 @@ ENV PATH="${VCPKG_ROOT}:${PATH}"
 WORKDIR /src/ale
 
 # Execute compilation when running the container
-CMD cmake -B build -S . \
-    -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake \
-    -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_CXX_STANDARD=17 \
-    -DBUILD_CPP_LIB=ON \
-    -DBUILD_PYTHON_LIB=ON \
-    && cmake --build build \
-    && python3 -m build --wheel
+#CMD cmake -B build -S . \
+#    -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake \
+#    -G Ninja \
+#    -DCMAKE_BUILD_TYPE=Release \
+#    -DCMAKE_CXX_STANDARD=17 \
+#    -DBUILD_CPP_LIB=ON \
+#    -DBUILD_PYTHON_LIB=ON \
+#    && cmake --build build \
+#    && python3 -m build --wheel
+CMD ["/bin/bash"]
