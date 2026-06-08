@@ -21,6 +21,7 @@
 #include "ale/common/Constants.h"
 #include "ale/ale_interface.hpp"
 #include "types.hpp"
+#include "ale/modifs/modifs.hpp"
 
 namespace fs = std::filesystem;
 
@@ -39,6 +40,7 @@ class PreprocessedEnv {
 public:
     PreprocessedEnv(
         int env_id,
+        const std::string& game_name,
         const fs::path& rom_path,
         int img_height = 84,
         int img_width = 84,
@@ -59,6 +61,9 @@ public:
 
     /// Set seed for next reset
     void set_seed(int seed);
+
+    /// Enable game modifications to be applied during reset or step
+    void enable_game_modifs(const std::vector<std::string>& names);
 
     /// Set action for next step
     void set_action(int action_id, float paddle_strength);
@@ -134,6 +139,7 @@ private:
     int current_action_id_;
     float current_paddle_strength_;
     int pending_seed_;
+    std::unique_ptr<GameModifs> game_modifs_;
 
     // Frame buffers
     std::vector<std::vector<uint8_t>> raw_frames_;

@@ -44,6 +44,7 @@ inline void maxpool_frames(uint8_t* dst, const uint8_t* src, int size) {
 
 PreprocessedEnv::PreprocessedEnv(
     int env_id,
+    const std::string& game_name,
     const fs::path& rom_path,
     int img_height,
     int img_width,
@@ -128,6 +129,8 @@ PreprocessedEnv::PreprocessedEnv(
     }
     frame_stack_ = std::vector<uint8_t>(stack_num_ * obs_size_, 0);
     frame_stack_idx_ = 0;
+
+    game_modifs_ = create_game_modifs(game_name);
 }
 
 void PreprocessedEnv::set_seed(int seed) {
@@ -139,6 +142,10 @@ void PreprocessedEnv::set_action(int action_id, float paddle_strength) {
     current_paddle_strength_ = paddle_strength;
 }
 
+void PreprocessedEnv::enable_game_modifs(const std::vector<std::string>& names) {
+    game_modifs_->enable(names);
+}
+
 void PreprocessedEnv::reset() {
     if (pending_seed_ >= 0) {
         ale_->setInt("random_seed", pending_seed_);
@@ -147,6 +154,7 @@ void PreprocessedEnv::reset() {
         pending_seed_ = -1;
     }
     ale_->reset_game();
+    game_modifs_->apply_reset_modifs(*ale_);
 
     // Press FIRE if required by the environment
     if (use_fire_reset_ && has_fire_action_) {
@@ -200,6 +208,7 @@ void PreprocessedEnv::step() {
     reward_t reward = 0;
     for (int skip_id = frame_skip_; skip_id > 0; --skip_id) {
         reward += ale_->act(action, strength);
+        game_modifs_->apply_step_modifs(*ale_);
 
         game_over_ = ale_->game_over();
         elapsed_steps_++;

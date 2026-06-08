@@ -6,6 +6,7 @@
 #include <nanobind/stl/filesystem.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
+#include <nanobind/stl/map.h>
 #include <nanobind/ndarray.h>
 
 namespace nb = nanobind;
@@ -127,6 +128,7 @@ nb::tuple wrap_step_result(EnvVectorizer& vec, BatchResult&& result) {
 void init_vector_module(nb::module_& m) {
     nb::class_<EnvVectorizer>(m, "ALEVectorInterface")
         .def("__init__", [](EnvVectorizer* t,
+                 std::string& game_name,
                 const fs::path& rom_path,
                 int num_envs,
                 int frame_skip,
@@ -160,13 +162,14 @@ void init_vector_module(nb::module_& m) {
                 }
 
                 new (t) EnvVectorizer(
-                    rom_path, num_envs, batch_size, num_threads, thread_affinity_offset,
+                    game_name, rom_path, num_envs, batch_size, num_threads, thread_affinity_offset,
                     autoreset_mode, img_height, img_width, stack_num, grayscale,
                     frame_skip, maxpool, noop_max, use_fire_reset, episodic_life,
                     life_loss_info, reward_clipping, max_episode_steps,
                     repeat_action_probability, full_action_space
                 );
             },
+            nb::arg("game_name"),
             nb::arg("rom_path"),
             nb::arg("num_envs"),
             nb::arg("frame_skip") = 4,
@@ -190,9 +193,10 @@ void init_vector_module(nb::module_& m) {
 
         .def("reset", [](EnvVectorizer& self,
                          const std::vector<int>& reset_indices,
-                         const std::vector<int>& reset_seeds) {
+                         const std::vector<int>& reset_seeds,
+                         const std::map<int, std::vector<std::string>>& reset_modifs) {
             nb::gil_scoped_release release;
-            auto result = self.reset(reset_indices, reset_seeds);
+            auto result = self.reset(reset_indices, reset_seeds, reset_modifs);
             nb::gil_scoped_acquire acquire;
             return wrap_reset_result(self, std::move(result));
         })

@@ -14,6 +14,7 @@
 namespace ale::vector {
 
 EnvVectorizer::EnvVectorizer(
+    const std::string& game_name,
     const fs::path& rom_path,
     int num_envs,
     int batch_size,
@@ -47,7 +48,7 @@ EnvVectorizer::EnvVectorizer(
     envs_.reserve(num_envs_);
     for (int i = 0; i < num_envs_; ++i) {
         envs_.push_back(std::make_unique<PreprocessedEnv>(
-            i, rom_path, img_height, img_width, frame_skip, maxpool,
+            i, game_name, rom_path, img_height, img_width, frame_skip, maxpool,
             grayscale, stack_num, noop_max, use_fire_reset, episodic_life,
             life_loss_info, reward_clipping, max_episode_steps,
             repeat_action_probability, full_action_space, -1
@@ -110,7 +111,7 @@ EnvVectorizer::~EnvVectorizer() {
     }
 }
 
-BatchResult EnvVectorizer::reset(const std::vector<int>& env_ids, const std::vector<int>& seeds) {
+BatchResult EnvVectorizer::reset(const std::vector<int>& env_ids, const std::vector<int>& seeds, const std::map<int, std::vector<std::string>>& modifs) {
     if (env_ids.size() != seeds.size()) {
         throw std::invalid_argument("env_ids and seeds must have same size");
     }
@@ -135,17 +136,35 @@ BatchResult EnvVectorizer::reset(const std::vector<int>& env_ids, const std::vec
         }
     } else {
         actions.reserve(batch_size_);
-        std::set<int> set_env_ids(env_ids.begin(), env_ids.end());
+        std::map<int, int> seed_map; // env_id -> seed
+
+        for (std::size_t i = 0; i < seeds.size(); ++i) {
+            const auto env_id = env_ids[i];
+            seed_map[env_id] = seeds[i];
+        }
             
         for (int i = 0; i < batch_size_; ++i) {
             int actual_env_id = last_recv_env_ids_[i];
+            const auto seed_it = seed_map.find(actual_env_id);
+            envs_[actual_env_id]->set_seed(seed_it != seed_map.end() ? seed_it->second : -1); // -1 means "do not change (ala soft reset)"
 
             Action action;
             action.env_id = actual_env_id;
             action.action_id = 0;
             action.paddle_strength = 1.0;
-            action.reset_mode = set_env_ids.find(actual_env_id) != set_env_ids.end() ? ResetMode::Real : ResetMode::Fake;
+            action.reset_mode = seed_it != seed_map.end() ? ResetMode::Real : ResetMode::Fake;
             actions.push_back(action);
+        }
+    }
+
+    for (std::size_t i = 0; i < actions.size(); ++i) {
+        const auto env_id = actions[i].env_id;
+        const auto modifs_it = modifs.find(env_id);
+
+        if (modifs_it != modifs.end())
+            envs_[env_id]->enable_game_modifs(modifs_it->second);
+        else {
+            // modifs has no info about env_id, so do not reset modifiers unlees we explicitly told to do it
         }
     }
     

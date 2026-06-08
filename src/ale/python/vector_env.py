@@ -76,6 +76,7 @@ class AtariVectorEnv(VectorEnv):
         ), f'{game} is not a ROM name, it should be snake_case not camel-case, i.e., "ms_pacman" not "MsPacman"'
 
         self.ale = ale_py.ALEVectorInterface(
+            game_name=game,
             rom_path=rom_path,
             num_envs=num_envs,
             frame_skip=frameskip,
@@ -176,7 +177,13 @@ class AtariVectorEnv(VectorEnv):
         else:
             raise TypeError("Unsupported seed type")
 
-        return self.ale.reset(reset_indices, reset_seeds)
+        reset_modifs = {}
+
+        if options is not None:
+            reset_modifs = options.get('reset_modifs', {})
+            assert isinstance(reset_modifs, dict)
+
+        return self.ale.reset(reset_indices, reset_seeds, reset_modifs)
 
     def step(
         self, actions: np.ndarray
