@@ -128,7 +128,7 @@ nb::tuple wrap_step_result(EnvVectorizer& vec, BatchResult&& result) {
 void init_vector_module(nb::module_& m) {
     nb::class_<EnvVectorizer>(m, "ALEVectorInterface")
         .def("__init__", [](EnvVectorizer* t,
-                 std::string& game_name,
+                const std::string& game_name,
                 const fs::path& rom_path,
                 int num_envs,
                 int frame_skip,
