@@ -25,7 +25,7 @@ RUN python3.12 get-pip.py
 RUN rm get-pip.py
 
 # Install the build package specifically under Python 3.12
-RUN python3.12 -m pip install --upgrade pip && python3.12 -m pip install build nanobind scikit_build_core jax
+RUN python3.12 -m pip install build nanobind scikit_build_core jax requests
 
 # Install vcpkg toolchain inside the container image
 RUN git clone https://github.com/microsoft/vcpkg.git /opt/vcpkg
@@ -34,6 +34,9 @@ RUN ./bootstrap-vcpkg.sh
 
 ENV VCPKG_ROOT=/opt/vcpkg
 ENV PATH="${VCPKG_ROOT}:${PATH}"
+
+RUN git clone https://github.com/kocherovms/neurolab.git /opt/neurolab
+ENV NEUROLAB_ROOT=/opt/neurolab
 
 # The working directory where your host directory gets attached
 WORKDIR /src/ale

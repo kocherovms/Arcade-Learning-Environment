@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install build utility for wheels using native pip
-RUN pip3 install --break-system-packages build nanobind scikit_build_core jax
+RUN pip3 install --break-system-packages build nanobind scikit_build_core jax requests
 
 # Install vcpkg toolchain inside the container image to keep it out of your host path
 RUN git clone https://github.com/microsoft/vcpkg.git /opt/vcpkg
@@ -27,6 +27,9 @@ RUN ./bootstrap-vcpkg.sh
 
 ENV VCPKG_ROOT=/opt/vcpkg
 ENV PATH="${VCPKG_ROOT}:${PATH}"
+
+RUN git clone https://github.com/kocherovms/neurolab.git /opt/neurolab
+ENV NEUROLAB_ROOT=/opt/neurolab
 
 # The working directory where your host directory gets attached
 WORKDIR /src/ale
