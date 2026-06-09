@@ -26,6 +26,8 @@ RUN rm get-pip.py
 
 # Install the build package specifically under Python 3.12
 RUN python3.12 -m pip install build nanobind scikit_build_core jax requests
+RUN python3.12 -m pip install wheel
+RUN python3.12 -m pip install twine
 
 # Install vcpkg toolchain inside the container image
 RUN git clone https://github.com/microsoft/vcpkg.git /opt/vcpkg

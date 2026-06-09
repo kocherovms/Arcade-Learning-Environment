@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install build utility for wheels using native pip
 RUN pip3 install --break-system-packages build nanobind scikit_build_core jax requests
+RUN pip3 install --break-system-packages twine
 
 # Install vcpkg toolchain inside the container image to keep it out of your host path
 RUN git clone https://github.com/microsoft/vcpkg.git /opt/vcpkg

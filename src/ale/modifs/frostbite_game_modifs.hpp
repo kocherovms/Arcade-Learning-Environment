@@ -8,6 +8,7 @@ public:
         reset_registry_["last_life"] = [this](ALEInterface & ale) { this->last_life(ale); };
         reset_registry_["full_igloo"] = [this](ALEInterface & ale) { this->full_igloo(ale); };
         reset_registry_["one_remaining_igloo"] = [this](ALEInterface & ale) { this->one_remaining_igloo(ale); };
+        reset_registry_["three_remaining_igloo"] = [this](ALEInterface & ale) { this->three_remaining_igloo(ale); };
         reset_registry_["half_igloo"] = [this](ALEInterface & ale) { this->half_igloo(ale); };
         reset_registry_["bailey_right_at_the_igloo_door"] = [this](ALEInterface & ale) { this->bailey_right_at_the_igloo_door(ale); };
         reset_registry_["bailey_very_near_igloo_door"] = [this](ALEInterface & ale) { this->bailey_very_near_igloo_door(ale); };
