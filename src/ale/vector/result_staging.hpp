@@ -21,13 +21,14 @@ namespace ale::vector {
 /// releases the current batch.
 class ResultStaging {
 public:
-    ResultStaging(std::size_t batch_size, std::size_t num_envs, std::size_t obs_size, bool same_step_mode)
+    ResultStaging(std::size_t batch_size, std::size_t num_envs, std::size_t obs_size, bool same_step_mode, bool return_ram)
         : batch_size_(batch_size),
           num_envs_(num_envs),
           obs_size_(obs_size),
           ordered_mode_(batch_size == num_envs),
           same_step_mode_(same_step_mode),
-          current_batch_(std::make_unique<BatchResult>(batch_size, obs_size, same_step_mode)),
+          return_ram_(return_ram),
+          current_batch_(std::make_unique<BatchResult>(batch_size, obs_size, same_step_mode, return_ram)),
           staged_count_(0),
           next_slot_(0),
           slots_available_(static_cast<int>(batch_size)),
@@ -67,6 +68,9 @@ public:
         output.final_obs = same_step_mode_
             ? current_batch_->final_obs_data() + slot * obs_size_
             : nullptr;
+        output.ram = return_ram_
+            ? current_batch_->rams_data() + slot * ALERAM::kRamSize
+            : nullptr;
 
         // Let worker write its data
         write_fn(output);
@@ -91,7 +95,7 @@ public:
         auto result = std::move(*current_batch_);
 
         // Allocate fresh batch for next round
-        current_batch_ = std::make_unique<BatchResult>(batch_size_, obs_size_, same_step_mode_);
+        current_batch_ = std::make_unique<BatchResult>(batch_size_, obs_size_, same_step_mode_, return_ram_);
 
         // Reset counters
         staged_count_.store(0);
@@ -124,6 +128,7 @@ private:
     const std::size_t obs_size_;
     const bool ordered_mode_;
     const bool same_step_mode_;
+    const bool return_ram_;
 
     std::unique_ptr<BatchResult> current_batch_;
 

@@ -27,6 +27,7 @@ using byte_t = unsigned char;
 
 /** A simple wrapper around the Atari RAM. */
 class ALERAM {
+ public:
   static constexpr std::size_t kRamSize = 128;
 
  public:

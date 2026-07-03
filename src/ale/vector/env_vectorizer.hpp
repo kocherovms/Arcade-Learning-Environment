@@ -42,7 +42,8 @@ public:
         bool reward_clipping = true,
         int max_episode_steps = 108000,
         float repeat_action_probability = 0.0f,
-        bool full_action_space = false
+        bool full_action_space = false,
+        bool return_ram = false
     );
 
     ~EnvVectorizer();
@@ -55,7 +56,7 @@ public:
     /// @param env_ids Environment indices to reset
     /// @param seeds Seeds for each environment (-1 to keep current seed)
     /// @return Batch of results from batch_size environments
-    BatchResult reset(const std::vector<int>& env_ids, const std::vector<int>& seeds, const std::map<int, std::vector<std::string>>& modifs);
+    BatchResult reset(const std::vector<int>& env_ids, const std::vector<int>& seeds, const std::map<int, std::vector<std::string>>& modifs, const std::map<int, std::vector<uint8_t>>& rams);
 
     /// Send actions to environments.
     /// actions[i] applies to the environment that was at position i in the last recv() result.

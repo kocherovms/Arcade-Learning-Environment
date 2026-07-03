@@ -31,6 +31,7 @@ class AtariVectorEnv(VectorEnv):
         continuous: bool = False,
         continuous_action_threshold: float = 0.5,
         autoreset_mode: AutoresetMode | str = AutoresetMode.NEXT_STEP,
+        return_ram: bool = False,
         # Preprocessing values
         img_height: int = 84,
         img_width: int = 84,
@@ -101,6 +102,7 @@ class AtariVectorEnv(VectorEnv):
                 if isinstance(autoreset_mode, AutoresetMode)
                 else autoreset_mode
             ),
+            return_ram=return_ram,
         )
 
         self.continuous = continuous
@@ -178,12 +180,16 @@ class AtariVectorEnv(VectorEnv):
             raise TypeError("Unsupported seed type")
 
         reset_modifs = {}
+        reset_rams = {}
 
         if options is not None:
             reset_modifs = options.get('reset_modifs', {})
             assert isinstance(reset_modifs, dict)
 
-        return self.ale.reset(reset_indices, reset_seeds, reset_modifs)
+            reset_rams = options.get('reset_rams', {})
+            assert isinstance(reset_rams, dict)
+
+        return self.ale.reset(reset_indices, reset_seeds, reset_modifs, reset_rams)
 
     def step(
         self, actions: np.ndarray

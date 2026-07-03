@@ -1,5 +1,6 @@
 #include "ale_vector_python_interface.hpp"
 #include "ale/vector/env_vectorizer.hpp"
+#include "ale/environment/ale_ram.hpp"
 
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/vector.h>
@@ -62,6 +63,12 @@ nb::tuple wrap_reset_result(EnvVectorizer& vec, BatchResult&& result) {
     info["lives"] = lives;
     info["frame_number"] = frame_numbers;
     info["episode_frame_number"] = episode_frame_numbers;
+    
+    if (result.has_rams()) {
+        const std::vector<std::size_t> rams_shape = {batch_size, ale::ALERAM::kRamSize};
+        auto rams = make_numpy_array(result.release_rams(), rams_shape);
+        info["rams"] = rams;
+    }
 
     return nb::make_tuple(observations, info);
 }
@@ -120,6 +127,12 @@ nb::tuple wrap_step_result(EnvVectorizer& vec, BatchResult&& result) {
         // If no envs done, final_obs buffer will be cleaned up by BatchResult destructor
     }
 
+    if (result.has_rams()) {
+        const std::vector<std::size_t> rams_shape = {batch_size, ale::ALERAM::kRamSize};
+        auto rams = make_numpy_array(result.release_rams(), rams_shape);
+        info["rams"] = rams;
+    }
+
     return nb::make_tuple(observations, rewards, terminations, truncations, info);
 }
 
@@ -148,7 +161,8 @@ void init_vector_module(nb::module_& m) {
                 int batch_size,
                 int num_threads,
                 int thread_affinity_offset,
-                const std::string& autoreset_mode_str
+                const std::string& autoreset_mode_str,
+                bool return_ram
             ) {
                 AutoresetMode autoreset_mode;
                 if (autoreset_mode_str == "Disabled") {
@@ -166,7 +180,7 @@ void init_vector_module(nb::module_& m) {
                     autoreset_mode, img_height, img_width, stack_num, grayscale,
                     frame_skip, maxpool, noop_max, use_fire_reset, episodic_life,
                     life_loss_info, reward_clipping, max_episode_steps,
-                    repeat_action_probability, full_action_space
+                    repeat_action_probability, full_action_space, return_ram
                 );
             },
             nb::arg("game_name"),
@@ -189,14 +203,16 @@ void init_vector_module(nb::module_& m) {
             nb::arg("batch_size") = 0,
             nb::arg("num_threads") = 0,
             nb::arg("thread_affinity_offset") = -1,
-            nb::arg("autoreset_mode") = "NextStep")
+            nb::arg("autoreset_mode") = "NextStep",
+            nb::arg("return_ram") = false)
 
         .def("reset", [](EnvVectorizer& self,
                          const std::vector<int>& reset_indices,
                          const std::vector<int>& reset_seeds,
-                         const std::map<int, std::vector<std::string>>& reset_modifs) {
+                         const std::map<int, std::vector<std::string>>& reset_modifs,
+                         const std::map<int, std::vector<uint8_t>>& reset_rams) {
             nb::gil_scoped_release release;
-            auto result = self.reset(reset_indices, reset_seeds, reset_modifs);
+            auto result = self.reset(reset_indices, reset_seeds, reset_modifs, reset_rams);
             nb::gil_scoped_acquire acquire;
             return wrap_reset_result(self, std::move(result));
         })

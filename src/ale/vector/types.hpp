@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <stdexcept>
+#include "ale/environment/ale_ram.hpp"
 
 namespace ale::vector {
 
@@ -47,13 +48,15 @@ struct OutputSlot {
     int* frame_number;
     int* episode_frame_number;
     uint8_t* final_obs;  // nullptr if not SameStep mode or not needed
+    uint8_t* ram; // nullptr if not RAM is not requested
 };
+
 
 /// Batch of results with ownership semantics
 /// Owns all buffers. Supports releasing ownership for Python handoff.
 class BatchResult {
 public:
-    BatchResult(std::size_t batch_size, std::size_t obs_size, bool include_final_obs)
+    BatchResult(std::size_t batch_size, std::size_t obs_size, bool include_final_obs, bool return_ram)
         : batch_size_(batch_size),
           obs_size_(obs_size),
           observations_(new uint8_t[batch_size * obs_size]),
@@ -64,7 +67,8 @@ public:
           lives_(new int[batch_size]),
           frame_numbers_(new int[batch_size]),
           episode_frame_numbers_(new int[batch_size]),
-          final_observations_(include_final_obs ? new uint8_t[batch_size * obs_size] : nullptr) {}
+          final_observations_(include_final_obs ? new uint8_t[batch_size * obs_size] : nullptr),
+          rams_(return_ram ? new uint8_t[batch_size * ALERAM::kRamSize] : nullptr) {}
 
     ~BatchResult() {
         delete[] observations_;
@@ -76,6 +80,7 @@ public:
         delete[] frame_numbers_;
         delete[] episode_frame_numbers_;
         delete[] final_observations_;
+        delete[] rams_;
     }
 
     // Move only
@@ -90,7 +95,8 @@ public:
           lives_(other.lives_),
           frame_numbers_(other.frame_numbers_),
           episode_frame_numbers_(other.episode_frame_numbers_),
-          final_observations_(other.final_observations_) {
+          final_observations_(other.final_observations_),
+          rams_(other.rams_) {
         other.observations_ = nullptr;
         other.env_ids_ = nullptr;
         other.rewards_ = nullptr;
@@ -100,6 +106,7 @@ public:
         other.frame_numbers_ = nullptr;
         other.episode_frame_numbers_ = nullptr;
         other.final_observations_ = nullptr;
+        other.rams_ = nullptr;
     }
 
     BatchResult& operator=(BatchResult&& other) noexcept {
@@ -113,6 +120,7 @@ public:
             delete[] frame_numbers_;
             delete[] episode_frame_numbers_;
             delete[] final_observations_;
+            delete[] rams_;
 
             batch_size_ = other.batch_size_;
             obs_size_ = other.obs_size_;
@@ -125,6 +133,7 @@ public:
             frame_numbers_ = other.frame_numbers_;
             episode_frame_numbers_ = other.episode_frame_numbers_;
             final_observations_ = other.final_observations_;
+            rams_ = other.rams_;
 
             other.observations_ = nullptr;
             other.env_ids_ = nullptr;
@@ -135,6 +144,7 @@ public:
             other.frame_numbers_ = nullptr;
             other.episode_frame_numbers_ = nullptr;
             other.final_observations_ = nullptr;
+            other.rams_ = nullptr;
         }
         return *this;
     }
@@ -152,6 +162,7 @@ public:
     int* lives_data() { return lives_; }
     int* frame_numbers_data() { return frame_numbers_; }
     int* episode_frame_numbers_data() { return episode_frame_numbers_; }
+    uint8_t* rams_data() { return rams_; }
 
     // Release ownership - returns pointer and nulls internal pointer
     // Caller takes ownership and must delete[]
@@ -164,10 +175,12 @@ public:
     int* release_lives() { auto p = lives_; lives_ = nullptr; return p; }
     int* release_frame_numbers() { auto p = frame_numbers_; frame_numbers_ = nullptr; return p; }
     int* release_episode_frame_numbers() { auto p = episode_frame_numbers_; episode_frame_numbers_ = nullptr; return p; }
+    uint8_t* release_rams() { auto p = rams_; rams_ = nullptr; return p; }
 
     std::size_t batch_size() const { return batch_size_; }
     std::size_t obs_size() const { return obs_size_; }
     bool has_final_obs() const { return final_observations_ != nullptr; }
+    bool has_rams() const { return rams_ != nullptr; }
 
 private:
     std::size_t batch_size_;
@@ -181,6 +194,7 @@ private:
     int* frame_numbers_;
     int* episode_frame_numbers_;
     uint8_t* final_observations_;
+    uint8_t* rams_;
 };
 
 }  // namespace ale::vector

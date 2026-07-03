@@ -34,7 +34,8 @@ EnvVectorizer::EnvVectorizer(
     bool reward_clipping,
     int max_episode_steps,
     float repeat_action_probability,
-    bool full_action_space
+    bool full_action_space,
+    bool return_ram
 ) : num_envs_(num_envs),
     batch_size_(batch_size > 0 ? batch_size : num_envs),
     img_height_(img_height),
@@ -51,7 +52,7 @@ EnvVectorizer::EnvVectorizer(
             i, game_name, rom_path, img_height, img_width, frame_skip, maxpool,
             grayscale, stack_num, noop_max, use_fire_reset, episodic_life,
             life_loss_info, reward_clipping, max_episode_steps,
-            repeat_action_probability, full_action_space, -1
+            repeat_action_probability, full_action_space, -1, return_ram
         ));
     }
 
@@ -63,25 +64,30 @@ EnvVectorizer::EnvVectorizer(
 
     // Create result staging
     bool same_step = (autoreset_mode_ == AutoresetMode::SameStep);
-    staging_ = std::make_unique<ResultStaging>(batch_size_, num_envs_, stacked_obs_size_, same_step);
+    staging_ = std::make_unique<ResultStaging>(batch_size_, num_envs_, stacked_obs_size_, same_step, return_ram);
 
-    // Determine thread count
-    int hw_threads = static_cast<int>(std::thread::hardware_concurrency());
-    if (num_threads <= 0) {
-        num_threads_ = std::min(batch_size_, hw_threads);
-    } else {
-        num_threads_ = std::min(num_threads, hw_threads);
+    if (num_envs_ == 1) {
+        num_threads_ = 0;
     }
+    else {
+        // Determine thread count
+        int hw_threads = static_cast<int>(std::thread::hardware_concurrency());
+        if (num_threads <= 0) {
+            num_threads_ = std::min(batch_size_, hw_threads);
+        } else {
+            num_threads_ = std::min(num_threads, hw_threads);
+        }
 
-    // Start worker threads
-    workers_.reserve(num_threads_);
-    for (int i = 0; i < num_threads_; ++i) {
-        workers_.emplace_back([this, i] { worker_loop(i); });
-    }
+        // Start worker threads
+        workers_.reserve(num_threads_);
+        for (int i = 0; i < num_threads_; ++i) {
+            workers_.emplace_back([this, i] { worker_loop(i); });
+        }
 
-    // Set thread affinity if requested
-    if (thread_affinity_offset >= 0) {
-        set_thread_affinity(thread_affinity_offset);
+        // Set thread affinity if requested
+        if (thread_affinity_offset >= 0) {
+            set_thread_affinity(thread_affinity_offset);
+        }
     }
 }
 
@@ -111,7 +117,7 @@ EnvVectorizer::~EnvVectorizer() {
     }
 }
 
-BatchResult EnvVectorizer::reset(const std::vector<int>& env_ids, const std::vector<int>& seeds, const std::map<int, std::vector<std::string>>& modifs) {
+BatchResult EnvVectorizer::reset(const std::vector<int>& env_ids, const std::vector<int>& seeds, const std::map<int, std::vector<std::string>>& modifs, const std::map<int, std::vector<uint8_t>>& rams) {
     if (env_ids.size() != seeds.size()) {
         throw std::invalid_argument("env_ids and seeds must have same size");
     }
@@ -161,15 +167,33 @@ BatchResult EnvVectorizer::reset(const std::vector<int>& env_ids, const std::vec
         const auto env_id = actions[i].env_id;
         const auto modifs_it = modifs.find(env_id);
 
-        if (modifs_it != modifs.end())
+        if (modifs_it != modifs.end()) {
             envs_[env_id]->enable_game_modifs(modifs_it->second);
+        }
         else {
             // modifs has no info about env_id, so do not reset modifiers unlees we explicitly told to do it
         }
+
+        const auto rams_it = rams.find(env_id);
+
+        if (rams_it != rams.end()) {
+            // std::cout << "kms@ " << "setting RAM of env " << env_id << std::endl;
+            envs_[env_id]->set_RAM(rams_it->second);
+        }
+        else {
+            // rams has no info about env_id, so do not reset modifiers unlees we explicitly told to do it
+        }
     }
-    
-    // Enqueue reset actions
-    action_queue_->enqueue_bulk(actions);
+
+    if (workers_.size() == 0) {
+        for (const Action & action : actions) {
+            execute_env(action);
+        }
+    }
+    else {
+        // Enqueue reset actions
+        action_queue_->enqueue_bulk(actions);
+    }
 
     // Wait for results
     return recv();
@@ -203,8 +227,15 @@ void EnvVectorizer::send(const std::vector<Action>& actions) {
         mapped_actions.push_back(mapped);
     }
 
-    // Enqueue actions
-    action_queue_->enqueue_bulk(mapped_actions);
+    if (workers_.size() == 0) {
+        for (const Action & action : mapped_actions) {
+            execute_env(action);
+        }
+    }
+    else {
+        // Enqueue actions
+        action_queue_->enqueue_bulk(mapped_actions);
+    }
 }
 
 BatchResult EnvVectorizer::recv() {

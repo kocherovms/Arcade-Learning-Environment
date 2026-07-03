@@ -60,7 +60,8 @@ PreprocessedEnv::PreprocessedEnv(
     int max_episode_steps,
     float repeat_action_probability,
     bool full_action_space,
-    int seed
+    int seed,
+    bool return_ram
 ) : env_id_(env_id),
     rom_path_(rom_path),
     obs_format_(grayscale ? ObsFormat::Grayscale : ObsFormat::RGB),
@@ -87,7 +88,8 @@ PreprocessedEnv::PreprocessedEnv(
     current_action_id_(PLAYER_A_NOOP),
     current_paddle_strength_(1.0f),
     pending_seed_(-1),
-    frame_stack_idx_(0)
+    frame_stack_idx_(0),
+    return_ram_(return_ram)
 {
     // Turn off verbosity
     Logger::setMode(Logger::Error);
@@ -146,6 +148,10 @@ void PreprocessedEnv::enable_game_modifs(const std::vector<std::string>& names) 
     game_modifs_->enable(names);
 }
 
+void PreprocessedEnv::set_RAM(const std::vector<uint8_t>& ram) {
+    ram_ = ram;
+}
+
 void PreprocessedEnv::reset() {
     if (pending_seed_ >= 0) {
         ale_->setInt("random_seed", pending_seed_);
@@ -155,6 +161,12 @@ void PreprocessedEnv::reset() {
     }
     ale_->reset_game();
     game_modifs_->apply_reset_modifs(*ale_);
+
+    if (ram_.size() > 0) {
+        for(size_t i = 0; i < ram_.size(); i++) {
+            ale_->setRAM(i, ram_[i]);
+        }
+    }
 
     // Press FIRE if required by the environment
     if (use_fire_reset_ && has_fire_action_) {
@@ -251,6 +263,12 @@ void PreprocessedEnv::write_to(const OutputSlot& slot) const {
             frame_stack_.data() + src_idx * obs_size_,
             obs_size_
         );
+        
+    }
+
+    // ram
+    if (slot.ram) {
+        std::memcpy(slot.ram, ale_->getRAM().array(), ALERAM::kRamSize);
     }
 }
 

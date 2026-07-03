@@ -56,7 +56,8 @@ public:
         int max_episode_steps = 108000,
         float repeat_action_probability = 0.0f,
         bool full_action_space = false,
-        int seed = -1
+        int seed = -1,
+        bool return_ram = false
     );
 
     /// Set seed for next reset
@@ -64,6 +65,9 @@ public:
 
     /// Enable game modifications to be applied during reset or step
     void enable_game_modifs(const std::vector<std::string>& names);
+
+    /// RAM to set on reset
+    void set_RAM(const std::vector<uint8_t>& ram);
 
     /// Set action for next step
     void set_action(int action_id, float paddle_strength);
@@ -91,7 +95,6 @@ public:
 
     /// Get channels per frame (1 for grayscale, 3 for RGB)
     int channels_per_frame() const { return channels_per_frame_; }
-
 private:
     void get_screen_grayscale(uint8_t* buffer) const;
     void get_screen_rgb(uint8_t* buffer) const;
@@ -140,11 +143,14 @@ private:
     float current_paddle_strength_;
     int pending_seed_;
     std::unique_ptr<GameModifs> game_modifs_;
+    std::vector<uint8_t> ram_;
 
     // Frame buffers
     std::vector<std::vector<uint8_t>> raw_frames_;
     std::vector<uint8_t> frame_stack_;
     int frame_stack_idx_;
+
+    bool return_ram_;
 };
 
 }  // namespace ale::vector
