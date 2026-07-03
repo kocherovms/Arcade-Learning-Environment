@@ -15,7 +15,7 @@ case "$DISTRIB_RELEASE" in
         ;;
 esac
 
-[ -d "dist/$DISTRIB_RELEASE" ] && rm dist/$DISTRIB_RELEASE/*
+[ -d "dist/$DISTRIB_RELEASE" ] && rm -f dist/$DISTRIB_RELEASE/*
 
 CMAKE_ARGS="-DSDL_SUPPORT=OFF -DSDL_DYNLOAD=OFF -DBUILD_PYTHON_LIB=ON -DBUILD_VECTOR_LIB=ON" python3.12 -m build --wheel --no-isolation --outdir=dist/$DISTRIB_RELEASE 
 python3.12 -m wheel tags --platform-tag $platform_tag dist/$DISTRIB_RELEASE/*.whl
