@@ -56,7 +56,13 @@ public:
     /// @param env_ids Environment indices to reset
     /// @param seeds Seeds for each environment (-1 to keep current seed)
     /// @return Batch of results from batch_size environments
-    BatchResult reset(const std::vector<int>& env_ids, const std::vector<int>& seeds, const std::map<int, std::vector<std::string>>& modifs, const std::map<int, std::vector<uint8_t>>& rams);
+    BatchResult reset(
+        const std::vector<int>& env_ids,
+        const std::vector<int>& seeds,
+        const std::map<int, std::shared_ptr<ale::ALEState>>& states,
+        const std::map<int, std::shared_ptr<std::vector<uint8_t>>>& rams,
+        const std::map<int, std::map<int, uint8_t>>& ram_patches
+    );
 
     /// Send actions to environments.
     /// actions[i] applies to the environment that was at position i in the last recv() result.

@@ -131,25 +131,27 @@ PreprocessedEnv::PreprocessedEnv(
     }
     frame_stack_ = std::vector<uint8_t>(stack_num_ * obs_size_, 0);
     frame_stack_idx_ = 0;
-
-    game_modifs_ = create_game_modifs(game_name);
 }
 
 void PreprocessedEnv::set_seed(int seed) {
     pending_seed_ = seed;
 }
 
+void PreprocessedEnv::set_state(const std::shared_ptr<ale::ALEState>& state) {
+    pending_state_ = state;
+}
+
+void PreprocessedEnv::set_ram(const std::shared_ptr<std::vector<uint8_t>>& ram) {
+    pending_ram_ = ram;
+}
+
+void PreprocessedEnv::set_ram_patch(const std::map<int, uint8_t>& ram_patch) {
+    pending_ram_patch_ = ram_patch;
+}
+
 void PreprocessedEnv::set_action(int action_id, float paddle_strength) {
     current_action_id_ = action_id;
     current_paddle_strength_ = paddle_strength;
-}
-
-void PreprocessedEnv::enable_game_modifs(const std::vector<std::string>& names) {
-    game_modifs_->enable(names);
-}
-
-void PreprocessedEnv::set_RAM(const std::vector<uint8_t>& ram) {
-    ram_ = ram;
 }
 
 void PreprocessedEnv::reset() {
@@ -160,12 +162,35 @@ void PreprocessedEnv::reset() {
         pending_seed_ = -1;
     }
     ale_->reset_game();
-    game_modifs_->apply_reset_modifs(*ale_);
 
-    if (ram_.size() > 0) {
-        for(size_t i = 0; i < ram_.size(); i++) {
-            ale_->setRAM(i, ram_[i]);
+    if (pending_state_) {
+        ale_->restoreState(*pending_state_);
+        pending_state_.reset();
+        // std::cout << "kms@ " << __FUNCTION__ << ", env_id=" << env_id_ << ", state restored" << std::endl;
+    }
+
+    if (pending_ram_) {
+        for(size_t i = 0; i < pending_ram_->size(); i++)
+            ale_->setRAM(i, (*pending_ram_)[i]);
+	
+        pending_ram_.reset();
+        // std::cout << "kms@ " << __FUNCTION__ << ", env_id=" << env_id_ << ", RAM set" << std::endl;
+    }
+
+    if (pending_ram_patch_.size() > 0) {
+        // std::string debug_message;
+    
+        for (const auto& [mem_ind, mem_val] : pending_ram_patch_) {
+            ale_->setRAM(mem_ind, mem_val);
+
+            // if (debug_message.size() > 0)
+            //     debug_message += ", ";
+        
+            // debug_message += std::to_string(mem_ind) + "=" + std::to_string(mem_val);
         }
+
+        pending_ram_patch_.clear(); 
+        // std::cout << "kms@ " << __FUNCTION__ << ", env_id=" << env_id_ << ", RAM patch applied: " << debug_message << std::endl;
     }
 
     // Press FIRE if required by the environment
@@ -220,7 +245,6 @@ void PreprocessedEnv::step() {
     reward_t reward = 0;
     for (int skip_id = frame_skip_; skip_id > 0; --skip_id) {
         reward += ale_->act(action, strength);
-        game_modifs_->apply_step_modifs(*ale_);
 
         game_over_ = ale_->game_over();
         elapsed_steps_++;

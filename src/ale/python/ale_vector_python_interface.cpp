@@ -209,10 +209,24 @@ void init_vector_module(nb::module_& m) {
         .def("reset", [](EnvVectorizer& self,
                          const std::vector<int>& reset_indices,
                          const std::vector<int>& reset_seeds,
-                         const std::map<int, std::vector<std::string>>& reset_modifs,
-                         const std::map<int, std::vector<uint8_t>>& reset_rams) {
+                         const std::map<int, nb::object>& reset_states,
+                         const std::map<int, std::vector<uint8_t>>& reset_rams,
+                         const std::map<int, std::map<int, uint8_t>>& reset_ram_patches) {
+            std::map<int, std::shared_ptr<ale::ALEState>> cpp_reset_states;
+
+            for (const auto & [env_ind, state] : reset_states) {
+                const nb::bytes py_serialized = nb::cast<nb::bytes>(state.attr("serialize")()); // nb::bytes are returned here
+                const std::string cpp_serialized(py_serialized.c_str(), py_serialized.size());
+                cpp_reset_states[env_ind] = std::make_shared<ale::ALEState>(cpp_serialized);
+            }
+
+            std::map<int, std::shared_ptr<std::vector<uint8_t>>> cpp_reset_rams;
+
+            for (const auto & [env_ind, ram] : reset_rams)
+                cpp_reset_rams[env_ind] = std::make_shared<std::vector<uint8_t>>(ram);
+	    
             nb::gil_scoped_release release;
-            auto result = self.reset(reset_indices, reset_seeds, reset_modifs, reset_rams);
+            auto result = self.reset(reset_indices, reset_seeds, cpp_reset_states, cpp_reset_rams, reset_ram_patches);
             nb::gil_scoped_acquire acquire;
             return wrap_reset_result(self, std::move(result));
         })

@@ -179,17 +179,21 @@ class AtariVectorEnv(VectorEnv):
         else:
             raise TypeError("Unsupported seed type")
 
-        reset_modifs = {}
+        reset_states = {}
         reset_rams = {}
+        reset_ram_patches = {}
 
         if options is not None:
-            reset_modifs = options.get('reset_modifs', {})
-            assert isinstance(reset_modifs, dict)
+            reset_states = options.get('states', {})
+            assert isinstance(reset_states, dict)
 
-            reset_rams = options.get('reset_rams', {})
+            reset_rams = options.get('rams', {})
             assert isinstance(reset_rams, dict)
 
-        return self.ale.reset(reset_indices, reset_seeds, reset_modifs, reset_rams)
+            reset_ram_patches = options.get('ram_patches', {})
+            assert isinstance(reset_ram_patches, dict)
+
+        return self.ale.reset(reset_indices, reset_seeds, reset_states, reset_rams, reset_ram_patches)
 
     def step(
         self, actions: np.ndarray

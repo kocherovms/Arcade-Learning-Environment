@@ -21,7 +21,6 @@
 #include "ale/common/Constants.h"
 #include "ale/ale_interface.hpp"
 #include "types.hpp"
-#include "ale/modifs/modifs.hpp"
 
 namespace fs = std::filesystem;
 
@@ -63,11 +62,14 @@ public:
     /// Set seed for next reset
     void set_seed(int seed);
 
-    /// Enable game modifications to be applied during reset or step
-    void enable_game_modifs(const std::vector<std::string>& names);
+    /// State to set upon reset (a-la "Load Game" feature)
+    void set_state(const std::shared_ptr<ale::ALEState>& state);
 
-    /// RAM to set on reset
-    void set_RAM(const std::vector<uint8_t>& ram);
+    /// RAM to load upon reset (a-la "Load Game" feature)
+    void set_ram(const std::shared_ptr<std::vector<uint8_t>>& ram);
+
+    /// RAM patch to apply on reset
+    void set_ram_patch(const std::map<int, uint8_t>& ram_patch);
 
     /// Set action for next step
     void set_action(int action_id, float paddle_strength);
@@ -142,8 +144,9 @@ private:
     int current_action_id_;
     float current_paddle_strength_;
     int pending_seed_;
-    std::unique_ptr<GameModifs> game_modifs_;
-    std::vector<uint8_t> ram_;
+    std::shared_ptr<ale::ALEState> pending_state_;
+    std::shared_ptr<std::vector<uint8_t>> pending_ram_;
+    std::map<int, uint8_t> pending_ram_patch_;
 
     // Frame buffers
     std::vector<std::vector<uint8_t>> raw_frames_;

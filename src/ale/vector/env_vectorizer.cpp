@@ -117,7 +117,13 @@ EnvVectorizer::~EnvVectorizer() {
     }
 }
 
-BatchResult EnvVectorizer::reset(const std::vector<int>& env_ids, const std::vector<int>& seeds, const std::map<int, std::vector<std::string>>& modifs, const std::map<int, std::vector<uint8_t>>& rams) {
+BatchResult EnvVectorizer::reset(
+     const std::vector<int>& env_ids,
+     const std::vector<int>& seeds,
+     const std::map<int, std::shared_ptr<ale::ALEState>>& states,
+     const std::map<int, std::shared_ptr<std::vector<uint8_t>>>& rams,
+     const std::map<int, std::map<int, uint8_t>>& ram_patches
+) {
     if (env_ids.size() != seeds.size()) {
         throw std::invalid_argument("env_ids and seeds must have same size");
     }
@@ -164,25 +170,24 @@ BatchResult EnvVectorizer::reset(const std::vector<int>& env_ids, const std::vec
     }
 
     for (std::size_t i = 0; i < actions.size(); ++i) {
-        const auto env_id = actions[i].env_id;
-        const auto modifs_it = modifs.find(env_id);
+	const auto env_id = actions[i].env_id;
+	auto states_it = states.find(env_id);
+	states_it = states_it == states.end() ? states.find(-1) : states_it;
+     
+	if (states_it != states.end())
+	    envs_[env_id]->set_state(states_it->second);
 
-        if (modifs_it != modifs.end()) {
-            envs_[env_id]->enable_game_modifs(modifs_it->second);
-        }
-        else {
-            // modifs has no info about env_id, so do not reset modifiers unlees we explicitly told to do it
-        }
-
-        const auto rams_it = rams.find(env_id);
-
-        if (rams_it != rams.end()) {
-            // std::cout << "kms@ " << "setting RAM of env " << env_id << std::endl;
-            envs_[env_id]->set_RAM(rams_it->second);
-        }
-        else {
-            // rams has no info about env_id, so do not reset modifiers unlees we explicitly told to do it
-        }
+	auto rams_it = rams.find(env_id);
+	rams_it = rams_it == rams.end() ? rams.find(-1) : rams_it;
+     
+	if (rams_it != rams.end())
+	    envs_[env_id]->set_ram(rams_it->second);
+     
+	auto ram_patches_it = ram_patches.find(env_id);
+	ram_patches_it = ram_patches_it == ram_patches.end() ? ram_patches.find(-1) : ram_patches_it;
+     
+	if (ram_patches_it != ram_patches.end())
+	    envs_[env_id]->set_ram_patch(ram_patches_it->second);
     }
 
     if (workers_.size() == 0) {

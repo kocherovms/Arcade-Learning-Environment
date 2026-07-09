@@ -56,7 +56,6 @@ add_subdirectory(common)
 add_subdirectory(emucore)
 add_subdirectory(environment)
 add_subdirectory(games)
-add_subdirectory(modifs)
 
 # C++ Library
 if (BUILD_CPP_LIB OR BUILD_PYTHON_LIB)
