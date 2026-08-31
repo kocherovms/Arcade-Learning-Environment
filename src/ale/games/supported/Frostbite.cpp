@@ -51,9 +51,10 @@ void FrostbiteSettings::step(const System& system) {
   // MGB: the maximum achievable life is 9. The system will actually let us set the byte to
   // higher values & properly decrement, but we do not gain lives beyond 9.
   int lives_byte = (readRam(&system, 0xCC) & 0xF);
-  int flag = readRam(&system, 0xF1) & 0x80;
-  int temperature = readRam(&system, 101);
-  m_terminal = (lives_byte == 0 && flag != 0) || (lives_byte == 0 && temperature == 0);
+  int status_byte = readRam(&system, 0xF1);
+  int is_sunk = status_byte == 128;
+  int is_frozen = status_byte == 32;
+  m_terminal = (lives_byte == 0 && (is_sunk || is_frozen));
 
   m_lives = lives_byte + 1;
 }
