@@ -146,6 +146,9 @@ class ALEInterface {
   // The remaining number of lives.
   int lives();
 
+  // Counter of how many levels were passed since reset
+  int levels_passed();
+
   // Returns the frame number since the start of the current episode
   int getEpisodeFrameNumber() const;
 

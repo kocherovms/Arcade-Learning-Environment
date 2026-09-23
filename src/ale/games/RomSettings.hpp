@@ -100,6 +100,11 @@ class RomSettings {
     return isTerminal() ? 0 : 1;
   }
 
+  // How many levels were passed
+  virtual int levels_passed() {
+    return 0;
+  }
+
   // Returns a restricted (minimal) set of actions. If not overriden, this is all actions.
   virtual ActionVect getMinimalActionSet();
 

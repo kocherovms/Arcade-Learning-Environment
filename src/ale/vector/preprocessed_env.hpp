@@ -139,6 +139,7 @@ private:
     int elapsed_steps_;
     bool game_over_;
     int lives_;
+    int levels_passed_;
     bool was_life_lost_;
     int reward_;
     int current_action_id_;

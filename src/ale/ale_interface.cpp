@@ -255,6 +255,15 @@ int ALEInterface::lives() {
   }
 }
 
+// Counter of how many levels were passed since reset
+int ALEInterface::levels_passed() {
+  if (romSettings == nullptr) {
+    throw std::runtime_error("ROM not set");
+  } else {
+    return romSettings->levels_passed();
+  }
+}
+
 // Applies an action to the game and returns the reward. It is the
 // user's responsibility to check if the game has ended and reset
 // when necessary - this method will keep pressing buttons on the

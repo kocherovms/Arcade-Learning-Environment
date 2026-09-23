@@ -51,9 +51,28 @@ void FrostbiteSettings::step(const System& system) {
   // MGB: the maximum achievable life is 9. The system will actually let us set the byte to
   // higher values & properly decrement, but we do not gain lives beyond 9.
   int lives_byte = (readRam(&system, 0xCC) & 0xF);
-  int status_byte = readRam(&system, 0xF1);
-  int is_sunk = status_byte == 128;
-  int is_frozen = status_byte == 32;
+  int status_byte = readRam(&system, 0xF1); // 113-th byte
+  // status_byte values:
+  // 8  - switch to next level
+  // 16 - freezing in progress
+  // 32 - reset current level with life minusing
+  // 64 - level clearance
+  // 128 - sinking in progress
+
+  if (m_is_level_switching) {
+    if (status_byte == 0) {
+      m_levels_passed++;
+      m_is_level_switching = 0;
+    }
+  }
+  else {
+    m_is_level_switching = (status_byte == 8 ? 1 : 0);
+  }
+  
+  int sink_level_byte = readRam(&system, 0xEB); // 107-th byte
+  int freeze_level_byte = readRam(&system, 0xF0); // 112-th byte
+  int is_sunk = status_byte == 128 && sink_level_byte == 18; // is Bailey sunk or is killed by bear. When Bailey is killed by bear he actually sunks outside of a screen =)
+  int is_frozen = status_byte == 16 && freeze_level_byte == 17;
   m_terminal = (lives_byte == 0 && (is_sunk || is_frozen));
 
   m_lives = lives_byte + 1;
@@ -98,6 +117,8 @@ void FrostbiteSettings::reset() {
   m_score = 0;
   m_terminal = false;
   m_lives = 4;
+  m_levels_passed = 0;
+  m_is_level_switching = 0;
 }
 
 /* saves the state of the rom settings */
@@ -106,6 +127,8 @@ void FrostbiteSettings::saveState(Serializer& ser) {
   ser.putInt(m_score);
   ser.putBool(m_terminal);
   ser.putInt(m_lives);
+  ser.putInt(m_levels_passed);
+  ser.putInt(m_is_level_switching);
 }
 
 // loads the state of the rom settings
@@ -114,6 +137,8 @@ void FrostbiteSettings::loadState(Deserializer& ser) {
   m_score = ser.getInt();
   m_terminal = ser.getBool();
   m_lives = ser.getInt();
+  m_levels_passed = ser.getInt();
+  m_is_level_switching = ser.getInt();
 }
 
 // returns a list of mode that the game can be played in

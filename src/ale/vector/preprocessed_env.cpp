@@ -83,6 +83,7 @@ PreprocessedEnv::PreprocessedEnv(
     elapsed_steps_(max_episode_steps + 1),
     game_over_(false),
     lives_(0),
+    levels_passed_(0),
     was_life_lost_(false),
     reward_(0),
     current_action_id_(PLAYER_A_NOOP),
@@ -228,6 +229,7 @@ void PreprocessedEnv::reset() {
     reward_ = 0;
     game_over_ = false;
     lives_ = ale_->lives();
+    levels_passed_ = ale_->levels_passed();
     was_life_lost_ = false;
     current_action_id_ = PLAYER_A_NOOP;
 }
@@ -267,6 +269,7 @@ void PreprocessedEnv::step() {
     // Update state
     process_screen();
     lives_ = ale_->lives();
+    levels_passed_ = ale_->levels_passed();
     reward_ = reward_clipping_ ? std::clamp<int>(reward, -1, 1) : reward;
 }
 
@@ -276,6 +279,7 @@ void PreprocessedEnv::write_to(const OutputSlot& slot) const {
     *slot.terminated = game_over_ || ((life_loss_info_ || episodic_life_) && was_life_lost_);
     *slot.truncated = elapsed_steps_ >= max_episode_steps_ && !(*slot.terminated);
     *slot.lives = lives_;
+    *slot.levels_passed = levels_passed_;
     *slot.frame_number = ale_->getFrameNumber();
     *slot.episode_frame_number = ale_->getEpisodeFrameNumber();
 

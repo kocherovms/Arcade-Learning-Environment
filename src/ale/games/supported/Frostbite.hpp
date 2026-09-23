@@ -72,6 +72,8 @@ class FrostbiteSettings : public RomSettings {
 
   int lives() override { return isTerminal() ? 0 : m_lives; }
 
+  int levels_passed() override { return m_levels_passed; }
+
   // returns a list of mode that the game can be played in
   // in this game, there are 2 available modes
   ModeVect getAvailableModes() override;
@@ -86,6 +88,8 @@ class FrostbiteSettings : public RomSettings {
   reward_t m_reward;
   reward_t m_score;
   int m_lives;
+  int m_levels_passed;
+  int m_is_level_switching;
 };
 
 }  // namespace ale
