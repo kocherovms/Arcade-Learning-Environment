@@ -13,8 +13,8 @@ namespace ale::vector {
 /// Autoreset behavior when episode ends
 enum class AutoresetMode {
     NextStep,  // Reset on next step() call (observation is first frame of new episode)
-    SameStep,   // Reset immediately, return final_obs separately
-    Disabled
+    SameStep,  // Reset immediately, return final_obs separately
+    Disabled   // Do nothing, caller is responsible for reset(), strict behavior - raises exception if one tries to step through ended env
 };
 
 /// Observation format

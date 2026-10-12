@@ -21,6 +21,7 @@ EnvVectorizer::EnvVectorizer(
     int num_threads,
     int thread_affinity_offset,
     AutoresetMode autoreset_mode,
+    bool is_strict_disabled_autoreset,
     int img_height,
     int img_width,
     int stack_num,
@@ -43,6 +44,7 @@ EnvVectorizer::EnvVectorizer(
     stack_num_(stack_num),
     grayscale_(grayscale),
     autoreset_mode_(autoreset_mode),
+    is_strict_disabled_autoreset_(is_strict_disabled_autoreset),
     last_recv_env_ids_(batch_size_ > 0 ? batch_size_ : num_envs)
 {
     // Create environments
@@ -288,10 +290,16 @@ void EnvVectorizer::execute_env(const Action& action) {
         } else if (action.reset_mode == ResetMode::Fake) {
             // ...
         } else {
-            if(env.is_episode_over())
-                throw std::runtime_error("Cannot step env when episode is over");
-
-            env.step();
+            if (env.is_episode_over()) {
+		if (is_strict_disabled_autoreset_)
+		  throw std::runtime_error("Cannot step env when episode is over");
+		else {
+		  // just pretend nothing happend
+		}
+	    }
+	    else {
+	      env.step();
+	    }
         }
 
         // Stage result

@@ -29,6 +29,7 @@ public:
         int num_threads = 0,
         int thread_affinity_offset = -1,
         AutoresetMode autoreset_mode = AutoresetMode::NextStep,
+        bool is_strict_disabled_autoreset = true,
         int img_height = 84,
         int img_width = 84,
         int stack_num = 4,
@@ -103,6 +104,7 @@ private:
     bool grayscale_;
     std::size_t stacked_obs_size_;
     AutoresetMode autoreset_mode_;
+    bool is_strict_disabled_autoreset_;
 
     // Environments
     std::vector<std::unique_ptr<PreprocessedEnv>> envs_;

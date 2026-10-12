@@ -31,6 +31,7 @@ class AtariVectorEnv(VectorEnv):
         continuous: bool = False,
         continuous_action_threshold: float = 0.5,
         autoreset_mode: AutoresetMode | str = AutoresetMode.NEXT_STEP,
+        is_strict_disabled_autoreset: bool = True,
         return_ram: bool = False,
         # Preprocessing values
         img_height: int = 84,
@@ -102,6 +103,7 @@ class AtariVectorEnv(VectorEnv):
                 if isinstance(autoreset_mode, AutoresetMode)
                 else autoreset_mode
             ),
+            is_strict_disabled_autoreset=is_strict_disabled_autoreset,
             return_ram=return_ram,
         )
 

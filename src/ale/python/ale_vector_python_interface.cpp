@@ -166,6 +166,7 @@ void init_vector_module(nb::module_& m) {
                 int num_threads,
                 int thread_affinity_offset,
                 const std::string& autoreset_mode_str,
+                bool is_strict_disabled_autoreset,
                 bool return_ram
             ) {
                 AutoresetMode autoreset_mode;
@@ -181,7 +182,7 @@ void init_vector_module(nb::module_& m) {
 
                 new (t) EnvVectorizer(
                     game_name, rom_path, num_envs, batch_size, num_threads, thread_affinity_offset,
-                    autoreset_mode, img_height, img_width, stack_num, grayscale,
+                    autoreset_mode, is_strict_disabled_autoreset, img_height, img_width, stack_num, grayscale,
                     frame_skip, maxpool, noop_max, use_fire_reset, episodic_life,
                     life_loss_info, reward_clipping, max_episode_steps,
                     repeat_action_probability, full_action_space, return_ram
@@ -208,6 +209,7 @@ void init_vector_module(nb::module_& m) {
             nb::arg("num_threads") = 0,
             nb::arg("thread_affinity_offset") = -1,
             nb::arg("autoreset_mode") = "NextStep",
+            nb::arg("is_strict_disabled_autoreset") = true,
             nb::arg("return_ram") = false)
 
         .def("reset", [](EnvVectorizer& self,
@@ -297,4 +299,5 @@ void init_vector_module(nb::module_& m) {
         .value("Disabled", AutoresetMode::Disabled)
         .value("NextStep", AutoresetMode::NextStep)
         .value("SameStep", AutoresetMode::SameStep);
+
 }
