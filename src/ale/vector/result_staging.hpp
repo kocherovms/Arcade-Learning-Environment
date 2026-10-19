@@ -64,6 +64,7 @@ public:
         output.truncated = &current_batch_->truncations_data()[slot];
         output.lives = &current_batch_->lives_data()[slot];
         output.levels_passed = &current_batch_->levels_passed_data()[slot];
+        output.level = &current_batch_->level_data()[slot];
         output.frame_number = &current_batch_->frame_numbers_data()[slot];
         output.episode_frame_number = &current_batch_->episode_frame_numbers_data()[slot];
         output.final_obs = same_step_mode_

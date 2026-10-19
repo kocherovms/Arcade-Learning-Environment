@@ -105,6 +105,13 @@ class RomSettings {
     return 0;
   }
 
+  // The current (1-based) level the agent is playing on.
+  // Games without a level concept stay at the neutral 0 ("not reported"),
+  // mirroring levels_passed()'s default.
+  virtual int level() {
+    return 0;
+  }
+
   // Returns a restricted (minimal) set of actions. If not overriden, this is all actions.
   virtual ActionVect getMinimalActionSet();
 

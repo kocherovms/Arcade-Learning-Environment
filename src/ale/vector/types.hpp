@@ -46,6 +46,7 @@ struct OutputSlot {
     bool* truncated;
     int* lives;
     int* levels_passed;
+    int* level;
     int* frame_number;
     int* episode_frame_number;
     uint8_t* final_obs;  // nullptr if not SameStep mode or not needed
@@ -67,6 +68,7 @@ public:
           truncations_(new bool[batch_size]),
           lives_(new int[batch_size]),
           levels_passed_(new int[batch_size]),
+          level_(new int[batch_size]),
           frame_numbers_(new int[batch_size]),
           episode_frame_numbers_(new int[batch_size]),
           final_observations_(include_final_obs ? new uint8_t[batch_size * obs_size] : nullptr),
@@ -80,6 +82,7 @@ public:
         delete[] truncations_;
         delete[] lives_;
         delete[] levels_passed_;
+        delete[] level_;
         delete[] frame_numbers_;
         delete[] episode_frame_numbers_;
         delete[] final_observations_;
@@ -97,6 +100,7 @@ public:
           truncations_(other.truncations_),
           lives_(other.lives_),
           levels_passed_(other.levels_passed_),
+          level_(other.level_),
           frame_numbers_(other.frame_numbers_),
           episode_frame_numbers_(other.episode_frame_numbers_),
           final_observations_(other.final_observations_),
@@ -108,6 +112,7 @@ public:
         other.truncations_ = nullptr;
         other.lives_ = nullptr;
         other.levels_passed_ = nullptr;
+        other.level_ = nullptr;
         other.frame_numbers_ = nullptr;
         other.episode_frame_numbers_ = nullptr;
         other.final_observations_ = nullptr;
@@ -123,6 +128,7 @@ public:
             delete[] truncations_;
             delete[] lives_;
             delete[] levels_passed_;
+            delete[] level_;
             delete[] frame_numbers_;
             delete[] episode_frame_numbers_;
             delete[] final_observations_;
@@ -137,6 +143,7 @@ public:
             truncations_ = other.truncations_;
             lives_ = other.lives_;
             levels_passed_ = other.levels_passed_;
+            level_ = other.level_;
             frame_numbers_ = other.frame_numbers_;
             episode_frame_numbers_ = other.episode_frame_numbers_;
             final_observations_ = other.final_observations_;
@@ -149,6 +156,7 @@ public:
             other.truncations_ = nullptr;
             other.lives_ = nullptr;
             other.levels_passed_ = nullptr;
+            other.level_ = nullptr;
             other.frame_numbers_ = nullptr;
             other.episode_frame_numbers_ = nullptr;
             other.final_observations_ = nullptr;
@@ -169,6 +177,7 @@ public:
     bool* truncations_data() { return truncations_; }
     int* lives_data() { return lives_; }
     int* levels_passed_data() { return levels_passed_; }
+    int* level_data() { return level_; }
     int* frame_numbers_data() { return frame_numbers_; }
     int* episode_frame_numbers_data() { return episode_frame_numbers_; }
     uint8_t* rams_data() { return rams_; }
@@ -183,6 +192,7 @@ public:
     bool* release_truncations() { auto p = truncations_; truncations_ = nullptr; return p; }
     int* release_lives() { auto p = lives_; lives_ = nullptr; return p; }
     int* release_levels_passed() { auto p = levels_passed_; levels_passed_ = nullptr; return p; }
+    int* release_level() { auto p = level_; level_ = nullptr; return p; }
     int* release_frame_numbers() { auto p = frame_numbers_; frame_numbers_ = nullptr; return p; }
     int* release_episode_frame_numbers() { auto p = episode_frame_numbers_; episode_frame_numbers_ = nullptr; return p; }
     uint8_t* release_rams() { auto p = rams_; rams_ = nullptr; return p; }
@@ -202,6 +212,7 @@ private:
     bool* truncations_;
     int* lives_;
     int* levels_passed_;
+    int* level_;
     int* frame_numbers_;
     int* episode_frame_numbers_;
     uint8_t* final_observations_;

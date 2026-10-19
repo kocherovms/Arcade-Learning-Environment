@@ -665,3 +665,28 @@ class TestVectorEnv:
 
         gym_envs.close()
         ale_envs.close()
+
+    def test_level_info(self):
+        """The vector env reports the current (1-based) level for Frostbite.
+
+        `level` mirrors `levels_passed`: it is read from the game's level
+        counter every step and reset, and is reported alongside the other
+        per-env info arrays.
+        """
+        envs = ale_py.AtariVectorEnv("frostbite", num_envs=2)
+        obs, info = envs.reset(seed=0)
+
+        assert "level" in info
+        assert info["level"].dtype == np.int32
+        assert info["level"].shape == (2,)
+        # A fresh Frostbite game starts on level 1.
+        assert np.all(info["level"] == 1)
+
+        actions = envs.action_space.sample()
+        obs, reward, terminations, truncations, info = envs.step(actions)
+        assert "level" in info
+        assert info["level"].dtype == np.int32
+        assert info["level"].shape == (2,)
+        assert np.all(info["level"] >= 1)
+
+        envs.close()

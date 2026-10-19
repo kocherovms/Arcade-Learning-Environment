@@ -264,6 +264,15 @@ int ALEInterface::levels_passed() {
   }
 }
 
+// The current (1-based) level the agent is playing on
+int ALEInterface::level() {
+  if (romSettings == nullptr) {
+    throw std::runtime_error("ROM not set");
+  } else {
+    return romSettings->level();
+  }
+}
+
 // Applies an action to the game and returns the reward. It is the
 // user's responsibility to check if the game has ended and reset
 // when necessary - this method will keep pressing buttons on the

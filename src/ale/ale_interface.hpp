@@ -149,6 +149,9 @@ class ALEInterface {
   // Counter of how many levels were passed since reset
   int levels_passed();
 
+  // The current (1-based) level the agent is playing on
+  int level();
+
   // Returns the frame number since the start of the current episode
   int getEpisodeFrameNumber() const;
 

@@ -74,6 +74,11 @@ class FrostbiteSettings : public RomSettings {
 
   int levels_passed() override { return m_levels_passed; }
 
+  // The 1-based level currently being played. RAM 0x4B (index 75) holds a
+  // 0-based level counter (a loaded levelN snapshot has it at N-1), so the
+  // reported level is that byte + 1 (level1 -> 0 -> 1, level5 -> 4 -> 5).
+  int level() override { return m_level; }
+
   // returns a list of mode that the game can be played in
   // in this game, there are 2 available modes
   ModeVect getAvailableModes() override;
@@ -89,6 +94,7 @@ class FrostbiteSettings : public RomSettings {
   reward_t m_score;
   int m_lives;
   int m_levels_passed;
+  int m_level;
   int m_is_level_switching;
 };
 
