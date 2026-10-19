@@ -52,6 +52,7 @@ nb::tuple wrap_reset_result(EnvVectorizer& vec, BatchResult&& result) {
     auto env_ids = make_numpy_array(result.release_env_ids(), info_shape);
     auto lives = make_numpy_array(result.release_lives(), info_shape);
     auto levels_passed = make_numpy_array(result.release_levels_passed(), info_shape);
+    auto level = make_numpy_array(result.release_level(), info_shape);
     auto frame_numbers = make_numpy_array(result.release_frame_numbers(), info_shape);
     auto episode_frame_numbers = make_numpy_array(result.release_episode_frame_numbers(), info_shape);
 
@@ -63,6 +64,7 @@ nb::tuple wrap_reset_result(EnvVectorizer& vec, BatchResult&& result) {
     info["env_id"] = env_ids;
     info["lives"] = lives;
     info["levels_passed"] = levels_passed;
+    info["level"] = level;
     info["frame_number"] = frame_numbers;
     info["episode_frame_number"] = episode_frame_numbers;
     
@@ -100,6 +102,7 @@ nb::tuple wrap_step_result(EnvVectorizer& vec, BatchResult&& result) {
     auto env_ids = make_numpy_array(result.release_env_ids(), info_shape);
     auto lives = make_numpy_array(result.release_lives(), info_shape);
     auto levels_passed = make_numpy_array(result.release_levels_passed(), info_shape);
+    auto level = make_numpy_array(result.release_level(), info_shape);
     auto frame_numbers = make_numpy_array(result.release_frame_numbers(), info_shape);
     auto episode_frame_numbers = make_numpy_array(result.release_episode_frame_numbers(), info_shape);
 
@@ -108,6 +111,7 @@ nb::tuple wrap_step_result(EnvVectorizer& vec, BatchResult&& result) {
     info["env_id"] = env_ids;
     info["lives"] = lives;
     info["levels_passed"] = levels_passed;
+    info["level"] = level;
     info["frame_number"] = frame_numbers;
     info["episode_frame_number"] = episode_frame_numbers;
 

@@ -68,6 +68,9 @@ void FrostbiteSettings::step(const System& system) {
   else {
     m_is_level_switching = (status_byte == 8 ? 1 : 0);
   }
+
+  // Level counter: 75-th byte holds a 0-based level counter; expose it 1-based.
+  m_level = readRam(&system, 0xCB) + 1;
   
   int sink_level_byte = readRam(&system, 0xEB); // 107-th byte
   int freeze_level_byte = readRam(&system, 0xF0); // 112-th byte
@@ -118,6 +121,7 @@ void FrostbiteSettings::reset() {
   m_terminal = false;
   m_lives = 4;
   m_levels_passed = 0;
+  m_level = 1;
   m_is_level_switching = 0;
 }
 
@@ -128,6 +132,7 @@ void FrostbiteSettings::saveState(Serializer& ser) {
   ser.putBool(m_terminal);
   ser.putInt(m_lives);
   ser.putInt(m_levels_passed);
+  ser.putInt(m_level);
   ser.putInt(m_is_level_switching);
 }
 
@@ -138,6 +143,7 @@ void FrostbiteSettings::loadState(Deserializer& ser) {
   m_terminal = ser.getBool();
   m_lives = ser.getInt();
   m_levels_passed = ser.getInt();
+  m_level = ser.getInt();
   m_is_level_switching = ser.getInt();
 }
 
